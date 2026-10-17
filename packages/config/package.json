@@ -1,0 +1,18 @@
+{
+  "name": "@proofpulse/config",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@proofpulse/shared-types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
