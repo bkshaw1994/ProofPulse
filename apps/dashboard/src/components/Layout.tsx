@@ -14,7 +14,9 @@ import {
   Menu,
   X,
   ExternalLink,
-  ChevronDown
+  ChevronDown,
+  BookOpen,
+  ArrowLeft
 } from 'lucide-react';
 import { CampaignPreviewModal } from './CampaignPreviewModal';
 import { api } from '../lib/api';
@@ -66,13 +68,14 @@ export const Layout: React.FC = () => {
   }, []);
 
   const navItems = [
-    { name: 'Overview', to: '/', icon: LayoutDashboard },
-    { name: 'Websites & Install', to: '/websites', icon: Globe },
-    { name: 'Campaigns', to: '/campaigns', icon: BellRing },
-    { name: 'Live Event Feed', to: '/events', icon: Activity },
-    { name: 'Analytics', to: '/analytics', icon: BarChart3 },
-    { name: 'Billing & Quotas', to: '/billing', icon: CreditCard },
-    { name: 'Workspace Settings', to: '/settings', icon: Settings },
+    { name: 'Overview', to: '/dashboard', icon: LayoutDashboard },
+    { name: 'Websites & Install', to: '/dashboard/websites', icon: Globe },
+    { name: 'Campaigns', to: '/dashboard/campaigns', icon: BellRing },
+    { name: 'Live Event Feed', to: '/dashboard/events', icon: Activity },
+    { name: 'Analytics', to: '/dashboard/analytics', icon: BarChart3 },
+    { name: 'Billing & Quotas', to: '/dashboard/billing', icon: CreditCard },
+    { name: 'Integration Docs', to: '/dashboard/docs', icon: BookOpen },
+    { name: 'Workspace Settings', to: '/dashboard/settings', icon: Settings },
   ];
 
   return (
@@ -123,6 +126,15 @@ export const Layout: React.FC = () => {
               <span className="font-medium text-slate-700 dark:text-slate-300">{activeWebsite.domain}</span>
             </div>
           )}
+
+          {/* Product Home Link */}
+          <NavLink
+            to="/"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Product Home</span>
+          </NavLink>
 
           {/* Live Preview Button */}
           <button

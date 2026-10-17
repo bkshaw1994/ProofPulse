@@ -6,7 +6,10 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': path.resolve(__dirname, './src'),
+      '@proofpulse/config': path.resolve(__dirname, '../../packages/config/src/index.ts'),
+      '@proofpulse/shared-types': path.resolve(__dirname, '../../packages/shared-types/src/index.ts'),
+      '@proofpulse/validation': path.resolve(__dirname, '../../packages/validation/src/index.ts')
     }
   },
   server: {

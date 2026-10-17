@@ -72,8 +72,9 @@ export function createApp(): Express {
     console.warn('Could not load openapi.yaml for Swagger UI:', err);
   }
 
-  // 5. System Health Endpoints
+  // 5. System Health Endpoints & Static Widget Delivery
   app.use('/', healthRouter);
+  app.use('/widget', express.static(path.resolve(__dirname, '../../widget/dist')));
 
   // 6. API v1 Subsystems
   const apiV1 = express.Router();
