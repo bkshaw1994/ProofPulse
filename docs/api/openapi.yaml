@@ -1,0 +1,857 @@
+openapi: 3.0.3
+info:
+  title: ProofPulse REST API
+  description: |
+    Production-grade API for ProofPulse - Verified Social Proof and Real-Time Urgency SaaS.
+    Base path: `/api/v1`.
+    Enforces strict tenant isolation, input validation, rate limiting, and cryptographic verification.
+  version: 1.0.0
+  contact:
+    name: ProofPulse Engineering Team
+    email: support@proofpulse.in
+
+servers:
+  - url: http://localhost:4000/api/v1
+    description: Local Development Server
+  - url: https://api.proofpulse.in/api/v1
+    description: Production Cluster
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ==========================================
+  # AUTH CONTEXT
+  # ==========================================
+  /me:
+    get:
+      summary: Get current authenticated user profile & workspace context
+      operationId: getCurrentUser
+      tags: [Auth & Profile]
+      responses:
+        '200':
+          description: User profile and active workspaces
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==========================================
+  # WEBSITES MANAGEMENT
+  # ==========================================
+  /websites:
+    get:
+      summary: List all websites in current workspace
+      operationId: listWebsites
+      tags: [Websites]
+      parameters:
+        - name: workspace_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Array of websites
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Website'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Register a new website domain
+      operationId: createWebsite
+      tags: [Websites]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebsiteInput'
+      responses:
+        '201':
+          description: Website registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebsiteWithCredentials'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /websites/{id}:
+    get:
+      summary: Retrieve website details by ID
+      operationId: getWebsiteById
+      tags: [Websites]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Website'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    patch:
+      summary: Update website domain or configuration
+      operationId: updateWebsite
+      tags: [Websites]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWebsiteInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Website'
+    delete:
+      summary: Soft-delete website
+      operationId: deleteWebsite
+      tags: [Websites]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Website deleted successfully
+
+  /websites/{id}/verify:
+    post:
+      summary: Verify website domain ownership via meta tag or DNS TXT
+      operationId: verifyWebsite
+      tags: [Websites]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  is_verified:
+                    type: boolean
+                  verified_at:
+                    type: string
+                    format: date-time
+        '400':
+          description: Verification check failed
+
+  # ==========================================
+  # CAMPAIGNS
+  # ==========================================
+  /websites/{id}/campaigns:
+    get:
+      summary: List all campaigns configured for a website
+      operationId: listWebsiteCampaigns
+      tags: [Campaigns]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Campaign'
+    post:
+      summary: Create a new notification campaign
+      operationId: createCampaign
+      tags: [Campaigns]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCampaignInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+
+  /campaigns/{id}:
+    get:
+      summary: Get campaign details
+      operationId: getCampaignById
+      tags: [Campaigns]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+    patch:
+      summary: Update campaign configuration
+      operationId: updateCampaign
+      tags: [Campaigns]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCampaignInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+    delete:
+      summary: Archive or delete campaign
+      operationId: deleteCampaign
+      tags: [Campaigns]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+
+  /campaigns/{id}/activate:
+    post:
+      summary: Validate event source and activate campaign
+      operationId: activateCampaign
+      tags: [Campaigns]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+
+  /campaigns/{id}/pause:
+    post:
+      summary: Pause an active campaign
+      operationId: pauseCampaign
+      tags: [Campaigns]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+
+  # ==========================================
+  # EVENT INGESTION
+  # ==========================================
+  /events:
+    post:
+      summary: Ingest a verified server-side event (Purchase, Signup, Registration, Stock)
+      operationId: ingestEvent
+      tags: [Event Ingestion]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestEventInput'
+      responses:
+        '202':
+          description: Event ingested and queued for matching campaigns
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  event_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: processed
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /websites/{id}/events:
+    get:
+      summary: Inspect recent verified event feed for a website
+      operationId: listWebsiteEvents
+      tags: [Event Ingestion]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventRecord'
+
+  # ==========================================
+  # ANALYTICS & USAGE
+  # ==========================================
+  /websites/{id}/analytics:
+    get:
+      summary: Retrieve aggregated impressions, clicks, CTR, and conversions
+      operationId: getWebsiteAnalytics
+      tags: [Analytics & Usage]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsSummary'
+
+  /websites/{id}/usage:
+    get:
+      summary: Get monthly quota consumption and limits
+      operationId: getWebsiteUsage
+      tags: [Analytics & Usage]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageSummary'
+
+  # ==========================================
+  # PUBLIC WIDGET ENDPOINTS (RESTRICTED SAFE READ)
+  # ==========================================
+  /widget/config:
+    get:
+      summary: Public fetch for active campaigns and display settings
+      operationId: getWidgetConfig
+      tags: [Public Widget]
+      security: []
+      parameters:
+        - name: website_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicWidgetConfig'
+        '404':
+          description: Website not found or deactivated
+
+  /widget/events:
+    get:
+      summary: Public fetch for eligible, anonymized notification cards
+      operationId: getWidgetEvents
+      tags: [Public Widget]
+      security: []
+      parameters:
+        - name: website_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: campaign_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PublicNotificationItem'
+
+  /widget/track:
+    post:
+      summary: Record visitor impression or click with deduplication
+      operationId: trackWidgetTelemetry
+      tags: [Public Widget]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrackTelemetryInput'
+      responses:
+        '204':
+          description: Telemetry logged
+
+  # ==========================================
+  # THIRD-PARTY WEBHOOK INTEGRATIONS
+  # ==========================================
+  /integrations/shopify/webhook:
+    post:
+      summary: Ingest HMAC-SHA256 signed Shopify orders/create webhook
+      operationId: handleShopifyWebhook
+      tags: [Integrations]
+      security: []
+      parameters:
+        - name: X-Shopify-Hmac-Sha256
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Shopify-Shop-Domain
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Webhook received and validated
+        '401':
+          description: Invalid HMAC signature
+
+  /billing/webhook:
+    post:
+      summary: Ingest HMAC signed Razorpay subscription webhooks
+      operationId: handleBillingWebhook
+      tags: [Billing & Subscriptions]
+      security: []
+      parameters:
+        - name: X-Razorpay-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Billing event processed
+
+# ==========================================
+# COMPONENTS & SCHEMAS
+# ==========================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-ProofPulse-Key
+
+  responses:
+    UnauthorizedError:
+      description: Unauthorized or missing authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    NotFoundError:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    ValidationError:
+      description: Request payload failed schema validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+  schemas:
+    ApiError:
+      type: object
+      required: [error, message, correlation_id]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        correlation_id:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+
+    UserProfileResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+            full_name:
+              type: string
+        workspaces:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              role:
+                type: string
+
+    Website:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        domain:
+          type: string
+        canonical_url:
+          type: string
+        public_key:
+          type: string
+        is_verified:
+          type: boolean
+        last_event_at:
+          type: string
+          format: date-time
+        last_widget_activity_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    WebsiteWithCredentials:
+      allOf:
+        - $ref: '#/components/schemas/Website'
+        - type: object
+          properties:
+            private_api_key:
+              type: string
+              description: Only returned once upon creation
+
+    CreateWebsiteInput:
+      type: object
+      required: [domain]
+      properties:
+        domain:
+          type: string
+          example: mystore.in
+        workspace_id:
+          type: string
+          format: uuid
+
+    UpdateWebsiteInput:
+      type: object
+      properties:
+        domain:
+          type: string
+
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        website_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        notification_type:
+          type: string
+          enum: [recent_purchase, recent_signup, product_popularity, live_visitors, low_stock, genuine_countdown]
+        status:
+          type: string
+          enum: [draft, active, paused, archived]
+        position:
+          type: string
+          enum: [bottom_left, bottom_right, top_left, top_right]
+        theme:
+          type: string
+          enum: [light, dark, minimal, glassmorphic]
+        duration_seconds:
+          type: integer
+        initial_delay_seconds:
+          type: integer
+        display_frequency_minutes:
+          type: integer
+        event_freshness_hours:
+          type: integer
+
+    CreateCampaignInput:
+      type: object
+      required: [name, notification_type]
+      properties:
+        name:
+          type: string
+        notification_type:
+          type: string
+          enum: [recent_purchase, recent_signup, product_popularity, live_visitors, low_stock, genuine_countdown]
+        position:
+          type: string
+          default: bottom_left
+        theme:
+          type: string
+          default: light
+        duration_seconds:
+          type: integer
+          default: 6
+        initial_delay_seconds:
+          type: integer
+          default: 3
+
+    UpdateCampaignInput:
+      type: object
+      properties:
+        name:
+          type: string
+        position:
+          type: string
+        theme:
+          type: string
+        duration_seconds:
+          type: integer
+
+    IngestEventInput:
+      type: object
+      required: [event_type, source_event_id, occurred_at, payload]
+      properties:
+        website_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          enum: [purchase, signup, registration, inventory_update]
+        source_event_id:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+        payload:
+          type: object
+          properties:
+            first_name:
+              type: string
+            city:
+              type: string
+            item_title:
+              type: string
+            item_image_url:
+              type: string
+            quantity:
+              type: integer
+
+    EventRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+        normalized_payload:
+          type: object
+        is_verified:
+          type: boolean
+
+    PublicWidgetConfig:
+      type: object
+      properties:
+        website_id:
+          type: string
+        campaigns:
+          type: array
+          items:
+            $ref: '#/components/schemas/Campaign'
+
+    PublicNotificationItem:
+      type: object
+      properties:
+        id:
+          type: string
+        campaign_id:
+          type: string
+        notification_type:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        image_url:
+          type: string
+        timestamp_formatted:
+          type: string
+        verified:
+          type: boolean
+          default: true
+
+    TrackTelemetryInput:
+      type: object
+      required: [website_id, event_type, visitor_id_hash]
+      properties:
+        website_id:
+          type: string
+        campaign_id:
+          type: string
+        event_id:
+          type: string
+        event_type:
+          type: string
+          enum: [impression, click, dismissal]
+        visitor_id_hash:
+          type: string
+        page_url:
+          type: string
+
+    AnalyticsSummary:
+      type: object
+      properties:
+        total_impressions:
+          type: integer
+        total_clicks:
+          type: integer
+        ctr_percentage:
+          type: number
+        attributed_conversions:
+          type: integer
+
+    UsageSummary:
+      type: object
+      properties:
+        period_month:
+          type: string
+        impressions_used:
+          type: integer
+        impressions_limit:
+          type: integer
+        plan_tier:
+          type: string

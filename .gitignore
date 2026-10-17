@@ -1,0 +1,56 @@
+# Node & Dependencies
+node_modules/
+.pnp
+.pnp.js
+dist/
+build/
+coverage/
+.nyc_output/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment and Secrets (CRITICAL: Never commit secrets)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.cert
+
+# Editor & OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+Thumbs.db
+ehthumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Testing & Artifacts
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Supabase Local
+.supabase/
+supabase/.temp/
+
+# Turbo / Build Cache
+.turbo
+*.tsbuildinfo
