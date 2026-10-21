@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import { InternalLayout } from './components/InternalLayout';
 import { Home } from './pages/Home';
 import { Overview } from './pages/Overview';
 import { Websites } from './pages/Websites';
@@ -30,10 +31,19 @@ export const App: React.FC = () => {
           <Route path="billing" element={<Billing />} />
           <Route path="docs" element={<Docs />} />
           <Route path="settings" element={<Settings />} />
-          <Route path="internal" element={<InternalPortal />} />
         </Route>
 
-        {/* Legacy / Direct URL Aliases */}
+        {/* Dedicated Back-Office & Internal Operations Subsystem (Completely Distinct UI) */}
+        <Route path="/internal" element={<InternalLayout />}>
+          <Route index element={<InternalPortal />} />
+          <Route path="merchants" element={<InternalPortal />} />
+          <Route path="subscriptions" element={<InternalPortal />} />
+          <Route path="integrations" element={<InternalPortal />} />
+          <Route path="telemetry" element={<InternalPortal />} />
+          <Route path="audit" element={<InternalPortal />} />
+        </Route>
+
+        {/* Direct URL Aliases & Redirects */}
         <Route path="/websites" element={<Navigate to="/dashboard/websites" replace />} />
         <Route path="/campaigns" element={<Navigate to="/dashboard/campaigns" replace />} />
         <Route path="/events" element={<Navigate to="/dashboard/events" replace />} />
@@ -41,7 +51,9 @@ export const App: React.FC = () => {
         <Route path="/billing" element={<Navigate to="/dashboard/billing" replace />} />
         <Route path="/docs" element={<Navigate to="/dashboard/docs" replace />} />
         <Route path="/settings" element={<Navigate to="/dashboard/settings" replace />} />
-        <Route path="/internal" element={<Navigate to="/dashboard/internal" replace />} />
+        <Route path="/dashboard/internal" element={<Navigate to="/internal" replace />} />
+        <Route path="/admin" element={<Navigate to="/internal" replace />} />
+        <Route path="/ops" element={<Navigate to="/internal" replace />} />
 
         {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
