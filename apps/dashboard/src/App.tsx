@@ -10,6 +10,7 @@ import { Analytics } from './pages/Analytics';
 import { Billing } from './pages/Billing';
 import { Docs } from './pages/Docs';
 import { Settings } from './pages/Settings';
+import { InternalPortal } from './pages/InternalPortal';
 
 export const App: React.FC = () => {
   return (
@@ -29,6 +30,7 @@ export const App: React.FC = () => {
           <Route path="billing" element={<Billing />} />
           <Route path="docs" element={<Docs />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="internal" element={<InternalPortal />} />
         </Route>
 
         {/* Legacy / Direct URL Aliases */}
@@ -39,6 +41,7 @@ export const App: React.FC = () => {
         <Route path="/billing" element={<Navigate to="/dashboard/billing" replace />} />
         <Route path="/docs" element={<Navigate to="/dashboard/docs" replace />} />
         <Route path="/settings" element={<Navigate to="/dashboard/settings" replace />} />
+        <Route path="/internal" element={<Navigate to="/dashboard/internal" replace />} />
 
         {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />

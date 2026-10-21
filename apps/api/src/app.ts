@@ -20,6 +20,7 @@ import { widgetRouter } from './modules/widget/routes';
 import { analyticsRouter } from './modules/analytics/routes';
 import { integrationsRouter } from './modules/integrations/routes';
 import { billingRouter } from './modules/billing/routes';
+import { adminRouter } from './modules/admin/routes';
 
 export function createApp(): Express {
   const app = express();
@@ -86,6 +87,7 @@ export function createApp(): Express {
   apiV1.use('/', analyticsRouter);
   apiV1.use('/integrations', integrationsRouter);
   apiV1.use('/billing', billingRouter);
+  apiV1.use('/admin', adminRouter);
 
   app.use('/api/v1', apiV1);
 

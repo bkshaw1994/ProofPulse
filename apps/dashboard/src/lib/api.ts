@@ -7,7 +7,9 @@ import {
   AnalyticsSummaryResponse,
   UsageSummaryResponse,
   Subscription,
-  PlanTier
+  PlanTier,
+  AdminMerchantOverview,
+  AdminMetricsSummary
 } from '@proofpulse/shared-types';
 import { PlanConfig } from '@proofpulse/config';
 
@@ -129,6 +131,38 @@ export const api = {
       fetchJson<{ data: { subscription: Subscription; plan: PlanConfig } }>('/billing/upgrade', {
         method: 'POST',
         body: JSON.stringify({ plan_tier: planTier, workspace_id: workspaceId })
+      })
+  },
+  admin: {
+    getMetrics: () => fetchJson<{ data: AdminMetricsSummary }>('/admin/metrics'),
+    listMerchants: (params?: {
+      search?: string;
+      integration_status?: string;
+      plan_tier?: string;
+      subscription_status?: string;
+    }) => {
+      const q = new URLSearchParams();
+      if (params?.search) q.append('search', params.search);
+      if (params?.integration_status) q.append('integration_status', params.integration_status);
+      if (params?.plan_tier) q.append('plan_tier', params.plan_tier);
+      if (params?.subscription_status) q.append('subscription_status', params.subscription_status);
+      return fetchJson<{ data: AdminMerchantOverview[]; meta: { total: number } }>(`/admin/merchants?${q.toString()}`);
+    },
+    getMerchant: (workspaceId: string) =>
+      fetchJson<{ data: AdminMerchantOverview & { websites_detailed: any[]; audit_logs: any[] } }>(
+        `/admin/merchants/${workspaceId}`
+      ),
+    updateSubscription: (
+      workspaceId: string,
+      data: { plan_tier: PlanTier; status?: string; reason?: string }
+    ) =>
+      fetchJson<{ data: any; message: string }>(`/admin/merchants/${workspaceId}/subscription`, {
+        method: 'PATCH',
+        body: JSON.stringify(data)
+      }),
+    simulateEvent: (workspaceId: string) =>
+      fetchJson<{ data: any; message: string }>(`/admin/merchants/${workspaceId}/simulate-event`, {
+        method: 'POST'
       })
   }
 };

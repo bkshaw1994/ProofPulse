@@ -16,7 +16,8 @@ import {
   ExternalLink,
   ChevronDown,
   BookOpen,
-  ArrowLeft
+  ArrowLeft,
+  ShieldCheck
 } from 'lucide-react';
 import { CampaignPreviewModal } from './CampaignPreviewModal';
 import { api } from '../lib/api';
@@ -76,6 +77,7 @@ export const Layout: React.FC = () => {
     { name: 'Billing & Quotas', to: '/dashboard/billing', icon: CreditCard },
     { name: 'Integration Docs', to: '/dashboard/docs', icon: BookOpen },
     { name: 'Workspace Settings', to: '/dashboard/settings', icon: Settings },
+    { name: 'Ops & Merchant Registry', to: '/dashboard/internal', icon: ShieldCheck },
   ];
 
   return (
@@ -126,6 +128,19 @@ export const Layout: React.FC = () => {
               <span className="font-medium text-slate-700 dark:text-slate-300">{activeWebsite.domain}</span>
             </div>
           )}
+
+          {/* Staff / Ops Portal Shortcut */}
+          <NavLink
+            to="/dashboard/internal"
+            className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+              location.pathname === '/dashboard/internal'
+                ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                : 'text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-rose-500" />
+            <span>Staff Portal</span>
+          </NavLink>
 
           {/* Product Home Link */}
           <NavLink

@@ -77,3 +77,71 @@ export interface UsageSummaryResponse {
   websites_limit: number;
   plan_tier: PlanTier;
 }
+
+export type AdminIntegrationStatus = 'fully_integrated' | 'widget_only' | 'events_only' | 'not_integrated';
+
+export interface AdminMerchantWebsite {
+  id: string;
+  domain: string;
+  canonical_url: string;
+  public_key: string;
+  is_verified: boolean;
+  verified_at: string | null;
+  last_event_at: string | null;
+  last_widget_activity_at: string | null;
+  created_at: string;
+}
+
+export interface AdminMerchantOverview {
+  user_id: string;
+  email: string;
+  full_name: string | null;
+  workspace_id: string;
+  workspace_name: string;
+  workspace_slug: string;
+  registered_at: string;
+
+  // Integration details
+  integration_status: AdminIntegrationStatus;
+  widget_installed: boolean;
+  webhooks_connected: boolean;
+  total_websites: number;
+  websites: AdminMerchantWebsite[];
+  total_events_ingested: number;
+  last_event_at: string | null;
+  last_widget_activity_at: string | null;
+  active_campaigns_count: number;
+
+  // Membership & Billing details
+  plan_tier: PlanTier;
+  plan_name: string;
+  subscription_status: string;
+  is_paying: boolean;
+  mrr_inr: number;
+  currency: string;
+  provider: string;
+  provider_subscription_id: string | null;
+  provider_customer_id: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  impressions_used: number;
+  impressions_limit: number;
+  quota_usage_percentage: number;
+}
+
+export interface AdminMetricsSummary {
+  total_merchants: number;
+  total_paying_members: number;
+  total_mrr_inr: number;
+  paying_conversion_rate: number;
+  fully_integrated_merchants: number;
+  integration_rate_percentage: number;
+  total_active_websites: number;
+  total_impressions_served: number;
+  total_verified_events: number;
+  tier_distribution: Record<PlanTier, number>;
+  status_distribution: Record<string, number>;
+  integration_distribution: Record<AdminIntegrationStatus, number>;
+}
+
