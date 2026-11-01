@@ -163,6 +163,14 @@ export const api = {
     simulateEvent: (workspaceId: string) =>
       fetchJson<{ data: any; message: string }>(`/admin/merchants/${workspaceId}/simulate-event`, {
         method: 'POST'
-      })
+      }),
+    getSubscriptions: () =>
+      fetchJson<{ data: any }>('/admin/subscriptions'),
+    getIntegrations: () =>
+      fetchJson<{ data: any[]; meta: any }>('/admin/integrations'),
+    getTelemetry: () =>
+      fetchJson<{ data: any }>('/admin/telemetry'),
+    getAuditLogs: (limit?: number) =>
+      fetchJson<{ data: any[]; meta: any }>(limit ? `/admin/audit-logs?limit=${limit}` : '/admin/audit-logs')
   }
 };

@@ -97,18 +97,18 @@ export const Events: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-            <Activity className="w-6 h-6 text-brand-600" />
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-brand-600 shrink-0" />
             Verified Event Stream
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Real-time feed of server-side verified customer orders, signups, and catalog stock updates.
           </p>
         </div>
 
         <button
           onClick={() => setTestModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs shadow-md shadow-brand-500/20 transition"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs shadow-md shadow-brand-500/20 transition active:scale-95"
         >
           <Send className="w-4 h-4" />
           <span>Send Test Purchase Event</span>
@@ -116,15 +116,15 @@ export const Events: React.FC = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex items-center justify-between gap-4 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <span className="font-semibold text-slate-600 dark:text-slate-300">Filter Event Type:</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
+          <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+          <span className="font-semibold text-slate-600 dark:text-slate-300 shrink-0 hidden xs:inline">Filter:</span>
           {['all', 'purchase', 'signup', 'inventory_update'].map((type) => (
             <button
               key={type}
               onClick={() => setFilterType(type)}
-              className={`px-3 py-1 rounded-lg font-medium transition capitalize ${
+              className={`px-2.5 sm:px-3 py-1 rounded-lg font-medium transition capitalize shrink-0 ${
                 filterType === type
                   ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-300 dark:border-brand-800'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -135,7 +135,7 @@ export const Events: React.FC = () => {
           ))}
         </div>
 
-        <span className="text-slate-400">
+        <span className="text-slate-400 text-[11px] sm:text-xs">
           Showing {filteredEvents.length} verified events
         </span>
       </div>
@@ -161,25 +161,25 @@ export const Events: React.FC = () => {
                 key={evt.id}
                 className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg shrink-0">
                       {evt.event_type === 'purchase' && '🛍️'}
                       {evt.event_type === 'signup' && '🎉'}
                       {evt.event_type === 'inventory_update' && '📦'}
                     </div>
 
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-slate-900 dark:text-white">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <span className="font-bold text-sm text-slate-900 dark:text-white truncate">
                           {p.first_name ? `${p.first_name} in ${p.city || 'India'}` : p.item_title}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 shrink-0">
                           <CheckCircle2 className="w-3 h-3" />
                           Verified
                         </span>
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                         {evt.event_type === 'purchase' && `Bought ${p.item_title} ${p.amount_formatted ? `(${p.amount_formatted})` : ''}`}
                         {evt.event_type === 'signup' && (p.action_label || 'Registered new account')}
                         {evt.event_type === 'inventory_update' && `Stock changed to ${p.items_left} remaining`}
@@ -187,13 +187,13 @@ export const Events: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="text-right space-y-1">
-                    <span className="text-[11px] font-mono text-slate-400 block">
+                  <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-1 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/60 shrink-0">
+                    <span className="text-[11px] font-mono text-slate-400">
                       {new Date(evt.occurred_at).toLocaleTimeString()}
                     </span>
                     <button
                       onClick={() => setExpandedEventId(isExpanded ? null : evt.id)}
-                      className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1 ml-auto"
+                      className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1"
                     >
                       <Code className="w-3 h-3" />
                       <span>{isExpanded ? 'Hide Payload' : 'Inspect JSON'}</span>

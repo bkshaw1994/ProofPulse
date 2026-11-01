@@ -56,30 +56,30 @@ export const InternalLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white">
       {/* Top Security & Ticker Banner */}
-      <div className="bg-slate-900 border-b border-slate-800 text-[11px] px-4 py-1.5 flex flex-wrap items-center justify-between font-mono text-slate-400">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+      <div className="bg-slate-900 border-b border-slate-800 text-[10px] sm:text-[11px] px-3 sm:px-4 py-1.5 flex items-center justify-between font-mono text-slate-400">
+        <div className="flex items-center gap-2 sm:gap-4 truncate">
+          <span className="flex items-center gap-1.5 text-emerald-400 font-semibold shrink-0">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             LIVE BACK-OFFICE
           </span>
           <span className="hidden sm:inline-block text-slate-500">|</span>
-          <span className="hidden sm:inline-block">CLUSTER: PROD-IN-MUM-1</span>
+          <span className="hidden sm:inline-block truncate">CLUSTER: PROD-IN-MUM-1</span>
           <span className="hidden md:inline-block text-slate-500">|</span>
           <span className="hidden md:inline-block">GATEWAY: PORT 4000 (HEALTHY)</span>
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="text-slate-400">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <span className="text-slate-400 text-[10px]">
             SYNC: <strong className="text-slate-200">{lastRefreshed}</strong>
           </span>
           <button
             onClick={fetchQuickMetrics}
             disabled={isRefreshing}
-            className="hover:text-white flex items-center gap-1 transition"
+            className="hover:text-white flex items-center gap-1 transition px-1.5 py-0.5 rounded bg-slate-800 text-[10px]"
             title="Refresh Platform Telemetry"
           >
             <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin text-brand-400' : ''}`} />
-            <span>SYNC</span>
+            <span className="hidden xs:inline">SYNC</span>
           </button>
           <span className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800 font-bold text-[10px]">
             RESTRICTED ACCESS
@@ -88,30 +88,31 @@ export const InternalLayout: React.FC = () => {
       </div>
 
       {/* Main Internal Header */}
-      <header className="h-16 border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 px-4 lg:px-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <header className="h-16 border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-4 lg:px-6 flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-4">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+            className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none"
+            aria-label="Toggle ops menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
           {/* Distinct Ops Logo */}
-          <NavLink to="/internal" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-600 via-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-rose-500/20 group-hover:scale-105 transition">
-              <Terminal className="w-5 h-5" />
+          <NavLink to="/internal" className="flex items-center gap-2 sm:gap-2.5 group">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-rose-600 via-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-rose-500/20 group-hover:scale-105 transition shrink-0">
+              <Terminal className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-base tracking-tight text-white font-mono">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="font-black text-sm sm:text-base tracking-tight text-white font-mono">
                   PROOFPULSE<span className="text-rose-500 font-sans">.OPS</span>
                 </span>
-                <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-slate-800 text-slate-300 rounded border border-slate-700 font-mono">
+                <span className="hidden xs:inline-block px-1.5 py-0.5 text-[8px] sm:text-[9px] font-bold uppercase tracking-wider bg-slate-800 text-slate-300 rounded border border-slate-700 font-mono">
                   COMMAND CENTER
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 font-mono hidden sm:block">
+              <p className="text-[10px] text-slate-400 font-mono hidden md:block">
                 Merchant Operations & Subscription Telemetry
               </p>
             </div>
@@ -152,15 +153,15 @@ export const InternalLayout: React.FC = () => {
         )}
 
         {/* Header Right Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Switch to Merchant Dashboard */}
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 transition group"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 transition group"
             title="Switch from Back-Office Ops to Merchant View"
           >
             <span>Merchant App</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition" />
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition shrink-0" />
           </button>
 
           {/* Interactive API Docs Link */}
@@ -177,7 +178,7 @@ export const InternalLayout: React.FC = () => {
 
           {/* Staff Profile Badge */}
           <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-            <div className="w-8 h-8 rounded-lg bg-rose-600/20 border border-rose-500/30 text-rose-400 flex items-center justify-center font-bold text-xs font-mono">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-600/20 border border-rose-500/30 text-rose-400 flex items-center justify-center font-bold text-xs font-mono shrink-0">
               OP
             </div>
             <div className="hidden lg:block text-left font-mono">
@@ -284,37 +285,130 @@ export const InternalLayout: React.FC = () => {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden bg-slate-950/80 backdrop-blur-md">
-            <div className="w-72 bg-slate-900 border-r border-slate-800 h-full p-4 flex flex-col justify-between shadow-2xl">
+          <div
+            className="fixed inset-0 z-50 lg:hidden bg-slate-950/80 backdrop-blur-md transition-opacity"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <div
+              className="w-72 sm:w-80 bg-slate-900 border-r border-slate-800 h-full p-4 flex flex-col justify-between shadow-2xl overflow-y-auto animate-in slide-in-from-left duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <span className="font-bold text-white font-mono text-sm">OPS CONSOLE MENU</span>
-                  <button onClick={() => setMobileMenuOpen(false)} className="text-slate-400 hover:text-white">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-mono font-bold text-xs">
+                      OPS
+                    </div>
+                    <span className="font-bold text-white font-mono text-sm">CONSOLE MENU</span>
+                  </div>
+                  <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                    aria-label="Close ops menu"
+                  >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
+
+                {/* Mobile Telemetry Snapshot */}
+                {metrics && (
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs space-y-2">
+                    <div className="flex items-center justify-between text-slate-400 text-[10px] uppercase">
+                      <span>PLATFORM MRR</span>
+                      <strong className="text-emerald-400 text-xs">₹{metrics.total_mrr_inr.toLocaleString('en-IN')}</strong>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80 text-[11px]">
+                      <div>
+                        <span className="text-slate-500 block text-[9px] uppercase">Merchants</span>
+                        <span className="text-white font-bold">{metrics.total_merchants} ({metrics.total_paying_members} paid)</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[9px] uppercase">Integrations</span>
+                        <span className="text-indigo-400 font-bold">{metrics.integration_rate_percentage}%</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Navigation Items */}
                 <div className="space-y-1">
-                  {navItems.map((item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white"
-                    >
-                      <item.icon className="w-4 h-4 text-slate-400" />
-                      {item.name}
-                    </NavLink>
-                  ))}
+                  <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono">
+                    OPERATIONS SECTIONS
+                  </div>
+                  {navItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = item.exact
+                      ? location.pathname === item.to || location.pathname === '/internal/merchants'
+                      : location.pathname.startsWith(item.to);
+                    return (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                          isActive
+                            ? 'bg-rose-600 text-white font-semibold shadow-md shadow-rose-600/20 border border-rose-500/30'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                        {item.name}
+                      </NavLink>
+                    );
+                  })}
+
                   <button
                     onClick={() => {
                       setMobileMenuOpen(false);
                       navigate('/dashboard');
                     }}
-                    className="w-full flex items-center gap-3 px-3.5 py-2.5 mt-4 rounded-xl text-xs font-semibold text-rose-300 bg-rose-950/40 border border-rose-900"
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 mt-3 rounded-xl text-xs font-semibold text-rose-300 bg-rose-950/40 border border-rose-900 hover:bg-rose-950/70 transition"
                   >
-                    <ArrowRight className="w-4 h-4" />
-                    Switch to Merchant App
+                    <span className="flex items-center gap-2">
+                      <ArrowRight className="w-4 h-4" />
+                      Switch to Merchant App
+                    </span>
+                    <span className="text-[10px] text-rose-400">Merchant Portal</span>
                   </button>
+                </div>
+
+                {/* Developer Quick Links in Mobile Menu */}
+                <div className="pt-2 border-t border-slate-800 space-y-1 text-xs font-mono">
+                  <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    ADMIN TOOLS
+                  </div>
+                  <a
+                    href="http://localhost:4000/health"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between px-3.5 py-2 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Server className="w-3.5 h-3.5 text-emerald-400" />
+                      API Health Status
+                    </span>
+                    <ExternalLink className="w-3 h-3 text-slate-600" />
+                  </a>
+                  <a
+                    href="http://localhost:4000/api-docs"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between px-3.5 py-2 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition"
+                  >
+                    <span className="flex items-center gap-2">
+                      <BookOpen className="w-3.5 h-3.5 text-brand-400" />
+                      Interactive API Docs
+                    </span>
+                    <ExternalLink className="w-3 h-3 text-slate-600" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Operator Security Badge in Mobile Menu Footer */}
+              <div className="mt-4 p-3 rounded-xl border border-slate-800 bg-slate-950 font-mono text-[10px]">
+                <div className="flex items-center justify-between text-slate-400">
+                  <span>SECURITY LEVEL</span>
+                  <span className="text-rose-400 font-bold">LEVEL-4</span>
                 </div>
               </div>
             </div>
@@ -322,7 +416,7 @@ export const InternalLayout: React.FC = () => {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-950">
+        <main className="flex-1 overflow-y-auto p-3.5 sm:p-6 lg:p-8 bg-slate-950">
           <div className="max-w-7xl mx-auto">
             <Outlet />
           </div>

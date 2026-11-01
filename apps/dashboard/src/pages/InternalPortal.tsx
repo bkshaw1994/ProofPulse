@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Users,
@@ -31,7 +31,11 @@ import {
   Database,
   Terminal,
   Lock,
-  ArrowRight
+  ArrowRight,
+  Cpu,
+  Flame,
+  Pause,
+  Play
 } from 'lucide-react';
 import { api } from '../lib/api';
 import {
@@ -45,7 +49,7 @@ export const InternalPortal: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Determine active view tab based on current pathname
+  // Active view tab synced with URL route
   const activeTab = useMemo(() => {
     const path = location.pathname;
     if (path.includes('/subscriptions')) return 'subscriptions';
@@ -55,10 +59,19 @@ export const InternalPortal: React.FC = () => {
     return 'merchants';
   }, [location.pathname]);
 
+  // Real-time State
   const [merchants, setMerchants] = useState<AdminMerchantOverview[]>([]);
   const [metrics, setMetrics] = useState<AdminMetricsSummary | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [subscriptionOps, setSubscriptionOps] = useState<any | null>(null);
+  const [integrationsList, setIntegrationsList] = useState<any[]>([]);
+  const [telemetry, setTelemetry] = useState<any | null>(null);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+
+  // Telemetry & Polling controls
+  const [initialLoading, setInitialLoading] = useState<boolean>(true);
+  const [livePolling, setLivePolling] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('Initializing...');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedIntegration, setSelectedIntegration] = useState<string>('all');
   const [selectedTier, setSelectedTier] = useState<string>('all');
@@ -81,29 +94,49 @@ export const InternalPortal: React.FC = () => {
   const [overrideSubmitting, setOverrideSubmitting] = useState<boolean>(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
 
-  // Load backend data
-  const loadData = async () => {
+  // Central real-time data fetcher
+  const loadRealtimeData = useCallback(async (isSilent = false) => {
     try {
-      setRefreshing(true);
-      const [metricsRes, merchantsRes] = await Promise.all([
+      if (!isSilent) setRefreshing(true);
+      const [metricsRes, merchantsRes, subsRes, intRes, telRes, auditRes] = await Promise.all([
         api.admin.getMetrics(),
-        api.admin.listMerchants()
+        api.admin.listMerchants(),
+        api.admin.getSubscriptions(),
+        api.admin.getIntegrations(),
+        api.admin.getTelemetry(),
+        api.admin.getAuditLogs(50)
       ]);
+
       setMetrics(metricsRes.data);
       setMerchants(merchantsRes.data);
+      setSubscriptionOps(subsRes.data);
+      setIntegrationsList(intRes.data);
+      setTelemetry(telRes.data);
+      setAuditLogs(auditRes.data);
+      setLastSyncTime(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     } catch (err) {
-      console.error('Failed to load internal admin data:', err);
+      console.error('Real-time data synchronization error:', err);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      setInitialLoading(false);
+      if (!isSilent) setRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    loadData();
   }, []);
 
-  // Filtered merchants computed locally for responsiveness
+  // Initial load
+  useEffect(() => {
+    loadRealtimeData();
+  }, [loadRealtimeData]);
+
+  // Real-time automatic polling loop (every 3 seconds when active)
+  useEffect(() => {
+    if (!livePolling) return;
+    const interval = setInterval(() => {
+      loadRealtimeData(true);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [livePolling, loadRealtimeData]);
+
+  // Filtered merchants computed dynamically
   const filteredMerchants = useMemo(() => {
     return merchants.filter((m) => {
       if (searchTerm.trim()) {
@@ -156,7 +189,7 @@ export const InternalPortal: React.FC = () => {
     setTargetWorkspace(m);
     setOverrideTier(m.plan_tier);
     setOverrideStatus(m.subscription_status);
-    setOverrideReason('Staff manual comp / adjustment');
+    setOverrideReason('Staff customer success override');
     setShowOverrideModal(true);
   };
 
@@ -171,10 +204,10 @@ export const InternalPortal: React.FC = () => {
         status: overrideStatus,
         reason: overrideReason
       });
-      setActionSuccessMsg(`Subscription for "${targetWorkspace.workspace_name}" updated to ${overrideTier.toUpperCase()} (${overrideStatus}).`);
+      setActionSuccessMsg(`Live Plan Updated: "${targetWorkspace.workspace_name}" is now ${overrideTier.toUpperCase()} (${overrideStatus}).`);
       setTimeout(() => setActionSuccessMsg(null), 4000);
       setShowOverrideModal(false);
-      loadData();
+      loadRealtimeData();
       if (inspectMerchant && inspectMerchant.workspace_id === targetWorkspace.workspace_id) {
         handleInspect({ ...inspectMerchant, plan_tier: overrideTier, subscription_status: overrideStatus });
       }
@@ -185,13 +218,13 @@ export const InternalPortal: React.FC = () => {
     }
   };
 
-  // Trigger test simulated event
+  // Ingest live simulated test order event
   const handleSimulate = async (m: AdminMerchantOverview) => {
     try {
       const res = await api.admin.simulateEvent(m.workspace_id);
-      setActionSuccessMsg(`Webhook event simulated for ${m.workspace_name}! ${res.message}`);
+      setActionSuccessMsg(`Real-time Ingestion: ${res.message}`);
       setTimeout(() => setActionSuccessMsg(null), 4000);
-      loadData();
+      loadRealtimeData();
     } catch (err: any) {
       alert(`Simulation failed: ${err.message}`);
     }
@@ -248,21 +281,21 @@ export const InternalPortal: React.FC = () => {
     switch (status) {
       case 'fully_integrated':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
             FULLY INTEGRATED
           </span>
         );
       case 'widget_only':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/25">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/25">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
             WIDGET ONLY
           </span>
         );
       case 'events_only':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/25">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/25">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
             WEBHOOKS ONLY
           </span>
@@ -270,7 +303,7 @@ export const InternalPortal: React.FC = () => {
       case 'not_integrated':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-slate-800 text-slate-400 border border-slate-700">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-slate-800 text-slate-400 border border-slate-700">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
             NOT INTEGRATED
           </span>
@@ -353,34 +386,58 @@ export const InternalPortal: React.FC = () => {
       {/* Internal Console Header Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-rose-950 text-rose-400 border border-rose-800 flex items-center gap-1.5">
-              <Shield className="w-3 h-3" /> STAFF ACCESS ONLY
+              <Shield className="w-3 h-3" /> STAFF OPERATOR ACCESS
             </span>
-            <span className="text-xs text-slate-500 font-mono">Operations Console & Store Registry</span>
+            <span className="text-xs text-slate-500 font-mono">Live Telemetry & Tenant Intelligence</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white font-mono flex items-center gap-2">
+          <h1 className="text-lg sm:text-2xl font-black tracking-tight text-white font-mono flex flex-wrap items-center gap-1.5 sm:gap-2">
             <span>OPERATOR CONSOLE:</span>
-            <span className="text-rose-500 font-sans">MERCHANT & MEMBERSHIP INTELLIGENCE</span>
+            <span className="text-rose-500 font-sans">REAL-TIME MERCHANT & MEMBERSHIP INTELLIGENCE</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Audit storefront embed health, track live webhook ingestion, and oversee subscription MRR & quotas.
+          <p className="text-xs text-slate-400 mt-1 max-w-3xl leading-relaxed">
+            Zero hard-coded data. All tenant records, subscription MRR, storefront embed activity, and webhook pipelines stream directly from live services.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Polling & Actions Control */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 font-mono text-xs">
+          {/* Live Streaming Toggle */}
           <button
-            onClick={loadData}
+            onClick={() => setLivePolling(!livePolling)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition ${
+              livePolling
+                ? 'bg-emerald-950/60 border-emerald-800 text-emerald-400'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+            }`}
+            title="Toggle 3-second real-time polling heartbeat"
+          >
+            {livePolling ? (
+              <>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>LIVE STREAM: ON (3s)</span>
+              </>
+            ) : (
+              <>
+                <Pause className="w-3 h-3 text-amber-400" />
+                <span>LIVE STREAM: PAUSED</span>
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={() => loadRealtimeData()}
             disabled={refreshing}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold text-slate-300 bg-slate-900 hover:bg-slate-800 border border-slate-800 transition shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-slate-300 bg-slate-900 hover:bg-slate-800 border border-slate-800 transition"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-rose-400' : ''}`} />
-            <span>RE-SYNC</span>
+            <span>SYNC NOW</span>
           </button>
 
           <button
             onClick={exportToCSV}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold text-white bg-rose-600 hover:bg-rose-500 shadow-sm shadow-rose-600/30 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-white bg-rose-600 hover:bg-rose-500 shadow-sm shadow-rose-600/30 transition"
           >
             <Download className="w-3.5 h-3.5" />
             <span>EXPORT CSV</span>
@@ -388,11 +445,11 @@ export const InternalPortal: React.FC = () => {
         </div>
       </div>
 
-      {/* Ops Navigation Tabs Bar */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto text-xs font-mono">
+      {/* Navigation Sub-Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto text-xs font-mono scrollbar-none">
         <button
           onClick={() => navigate('/internal')}
-          className={`px-4 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
+          className={`px-3.5 sm:px-4 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
             activeTab === 'merchants'
               ? 'bg-rose-600/20 text-rose-300 border border-rose-500/40 font-bold'
               : 'text-slate-400 hover:text-white hover:bg-slate-900 border border-transparent'
@@ -404,65 +461,65 @@ export const InternalPortal: React.FC = () => {
 
         <button
           onClick={() => navigate('/internal/subscriptions')}
-          className={`px-4 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
+          className={`px-3.5 sm:px-4 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
             activeTab === 'subscriptions'
               ? 'bg-rose-600/20 text-rose-300 border border-rose-500/40 font-bold'
               : 'text-slate-400 hover:text-white hover:bg-slate-900 border border-transparent'
           }`}
         >
           <CreditCard className="w-4 h-4 text-emerald-400" />
-          <span>Subscriptions & MRR</span>
+          <span>Subscriptions & MRR ({subscriptionOps ? `₹${subscriptionOps.total_mrr.toLocaleString('en-IN')}` : '...'})</span>
         </button>
 
         <button
           onClick={() => navigate('/internal/integrations')}
-          className={`px-4 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
+          className={`px-3.5 sm:px-4 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
             activeTab === 'integrations'
               ? 'bg-rose-600/20 text-rose-300 border border-rose-500/40 font-bold'
               : 'text-slate-400 hover:text-white hover:bg-slate-900 border border-transparent'
           }`}
         >
           <Activity className="w-4 h-4 text-sky-400" />
-          <span>Storefronts & Webhooks</span>
+          <span>Storefronts & Webhooks ({integrationsList.length})</span>
         </button>
 
         <button
           onClick={() => navigate('/internal/telemetry')}
-          className={`px-4 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
+          className={`px-3.5 sm:px-4 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
             activeTab === 'telemetry'
               ? 'bg-rose-600/20 text-rose-300 border border-rose-500/40 font-bold'
               : 'text-slate-400 hover:text-white hover:bg-slate-900 border border-transparent'
           }`}
         >
           <Radio className="w-4 h-4 text-amber-400" />
-          <span>Platform Health</span>
+          <span>Live Health & Memory ({telemetry ? `${telemetry.memory?.rss_mb} MB` : '...'})</span>
         </button>
 
         <button
           onClick={() => navigate('/internal/audit')}
-          className={`px-4 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
+          className={`px-3.5 sm:px-4 py-2 rounded-xl transition flex items-center gap-2 shrink-0 ${
             activeTab === 'audit'
               ? 'bg-rose-600/20 text-rose-300 border border-rose-500/40 font-bold'
               : 'text-slate-400 hover:text-white hover:bg-slate-900 border border-transparent'
           }`}
         >
           <Shield className="w-4 h-4 text-purple-400" />
-          <span>Audit Trail</span>
+          <span>Real-Time Audit Trail ({auditLogs.length})</span>
         </button>
       </div>
 
-      {/* Top Aggregate KPI Cards (Visible across views) */}
+      {/* Top Real-Time KPI Cards */}
       {metrics && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {/* Total MRR */}
           <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden group hover:border-slate-700 transition">
             <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-[10px] font-mono uppercase tracking-wider">PLATFORM MRR</span>
+              <span className="text-[10px] font-mono uppercase tracking-wider">LIVE PLATFORM MRR</span>
               <div className="w-7 h-7 rounded-lg bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 flex items-center justify-center">
                 <TrendingUp className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-2xl font-black text-white font-mono">
+            <div className="text-xl sm:text-2xl font-black text-white font-mono">
               ₹{metrics.total_mrr_inr.toLocaleString('en-IN')}
             </div>
             <div className="mt-1 text-[11px] text-slate-400 font-mono">
@@ -473,12 +530,12 @@ export const InternalPortal: React.FC = () => {
           {/* Total Merchants */}
           <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden group hover:border-slate-700 transition">
             <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-[10px] font-mono uppercase tracking-wider">ONBOARDED MERCHANTS</span>
+              <span className="text-[10px] font-mono uppercase tracking-wider">TOTAL TENANTS</span>
               <div className="w-7 h-7 rounded-lg bg-rose-950/60 border border-rose-800/40 text-rose-400 flex items-center justify-center">
                 <Users className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-2xl font-black text-white font-mono">
+            <div className="text-xl sm:text-2xl font-black text-white font-mono">
               {metrics.total_merchants}
             </div>
             <div className="mt-1 text-[11px] text-slate-400 font-mono">
@@ -494,7 +551,7 @@ export const InternalPortal: React.FC = () => {
                 <CheckCircle2 className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-2xl font-black text-white font-mono">
+            <div className="text-xl sm:text-2xl font-black text-white font-mono">
               {metrics.integration_rate_percentage}%
             </div>
             <div className="mt-1 text-[11px] text-slate-400 font-mono">
@@ -510,7 +567,7 @@ export const InternalPortal: React.FC = () => {
                 <Globe className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-2xl font-black text-white font-mono">
+            <div className="text-xl sm:text-2xl font-black text-white font-mono">
               {metrics.total_active_websites}
             </div>
             <div className="mt-1 text-[11px] text-slate-400 font-mono">
@@ -519,25 +576,25 @@ export const InternalPortal: React.FC = () => {
           </div>
 
           {/* Total Impressions */}
-          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden group hover:border-slate-700 transition">
+          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm relative overflow-hidden group hover:border-slate-700 transition sm:col-span-2 md:col-span-1">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-[10px] font-mono uppercase tracking-wider">GLOBAL IMPRESSIONS</span>
               <div className="w-7 h-7 rounded-lg bg-amber-950/60 border border-amber-800/40 text-amber-400 flex items-center justify-center">
                 <Zap className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-2xl font-black text-white font-mono">
+            <div className="text-xl sm:text-2xl font-black text-white font-mono">
               {metrics.total_impressions_served.toLocaleString('en-IN')}
             </div>
             <div className="mt-1 text-[11px] text-slate-400 font-mono">
-              social proof toasts
+              toasts delivered live
             </div>
           </div>
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 1: MERCHANT & MEMBERSHIP REGISTRY (DEFAULT VIEW) */}
+      {/* TAB 1: MERCHANT & MEMBERSHIP REGISTRY */}
       {/* ========================================================================= */}
       {activeTab === 'merchants' && (
         <div className="space-y-4">
@@ -548,7 +605,7 @@ export const InternalPortal: React.FC = () => {
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input
                   type="text"
-                  placeholder="Search merchant, email, domain, or sub ID..."
+                  placeholder="Live search by merchant name, email, workspace, domain..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 text-xs rounded-lg border border-slate-800 bg-slate-950 text-white placeholder-slate-500 font-mono focus:outline-none focus:ring-1 focus:ring-rose-500"
@@ -560,14 +617,14 @@ export const InternalPortal: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-mono w-full lg:w-auto">
                 {/* Integration filter */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-500 text-[11px]">INTEGRATION:</span>
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  <span className="text-slate-500 text-[11px] shrink-0">INTEGRATION:</span>
                   <select
                     value={selectedIntegration}
                     onChange={(e) => setSelectedIntegration(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-200 focus:outline-none"
+                    className="w-full sm:w-auto px-2.5 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-200 focus:outline-none"
                   >
                     <option value="all">ALL STATES</option>
                     <option value="fully_integrated">FULLY INTEGRATED</option>
@@ -578,12 +635,12 @@ export const InternalPortal: React.FC = () => {
                 </div>
 
                 {/* Tier filter */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-500 text-[11px]">PLAN:</span>
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  <span className="text-slate-500 text-[11px] shrink-0">PLAN:</span>
                   <select
                     value={selectedTier}
                     onChange={(e) => setSelectedTier(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-200 focus:outline-none"
+                    className="w-full sm:w-auto px-2.5 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-200 focus:outline-none"
                   >
                     <option value="all">ALL TIERS</option>
                     <option value="free">FREE (₹0)</option>
@@ -594,12 +651,12 @@ export const InternalPortal: React.FC = () => {
                 </div>
 
                 {/* Status filter */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-500 text-[11px]">STATUS:</span>
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  <span className="text-slate-500 text-[11px] shrink-0">STATUS:</span>
                   <select
                     value={selectedStatus}
                     onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-200 focus:outline-none"
+                    className="w-full sm:w-auto px-2.5 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-200 focus:outline-none"
                   >
                     <option value="all">ALL STATUSES</option>
                     <option value="active">ACTIVE</option>
@@ -610,10 +667,10 @@ export const InternalPortal: React.FC = () => {
               </div>
             </div>
 
-            <div className="text-[11px] text-slate-500 font-mono flex items-center justify-between border-t border-slate-800/80 pt-2">
+            <div className="text-[11px] text-slate-500 font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-t border-slate-800/80 pt-2">
               <span>
                 Matching <strong className="text-white">{filteredMerchants.length}</strong> of{' '}
-                <strong className="text-white">{merchants.length}</strong> onboarded merchants
+                <strong className="text-white">{merchants.length}</strong> onboarded merchants (Live Stream Synced: {lastSyncTime})
               </span>
               {(searchTerm || selectedIntegration !== 'all' || selectedTier !== 'all' || selectedStatus !== 'all') && (
                 <button
@@ -623,7 +680,7 @@ export const InternalPortal: React.FC = () => {
                     setSelectedTier('all');
                     setSelectedStatus('all');
                   }}
-                  className="text-rose-400 hover:underline"
+                  className="text-rose-400 hover:underline self-start sm:self-auto"
                 >
                   RESET FILTERS
                 </button>
@@ -634,7 +691,7 @@ export const InternalPortal: React.FC = () => {
           {/* High-Density Merchant Table */}
           <div className="rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse font-sans">
+              <table className="w-full text-left border-collapse font-sans min-w-[780px]">
                 <thead>
                   <tr className="border-b border-slate-800 bg-slate-950/80 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
                     <th className="py-3 px-4">Merchant & Workspace</th>
@@ -646,11 +703,11 @@ export const InternalPortal: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 text-xs">
-                  {loading ? (
+                  {initialLoading ? (
                     <tr>
                       <td colSpan={6} className="py-12 text-center text-slate-400 font-mono">
                         <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-rose-500" />
-                        QUERYING BACK-OFFICE DATABASE...
+                        QUERYING LIVE BACK-OFFICE DATABASE...
                       </td>
                     </tr>
                   ) : filteredMerchants.length === 0 ? (
@@ -707,6 +764,9 @@ export const InternalPortal: React.FC = () => {
                                 </a>
                               </div>
                             ))}
+                            {m.websites.length === 0 && (
+                              <span className="text-slate-500 italic">No domain registered</span>
+                            )}
                           </div>
                         </td>
 
@@ -747,7 +807,7 @@ export const InternalPortal: React.FC = () => {
                             </div>
                             <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
                               <div
-                                className={`h-full rounded-full ${
+                                className={`h-full rounded-full transition-all duration-300 ${
                                   m.quota_usage_percentage > 90
                                     ? 'bg-rose-500'
                                     : m.quota_usage_percentage > 70
@@ -758,7 +818,7 @@ export const InternalPortal: React.FC = () => {
                               ></div>
                             </div>
                             <div className="text-[10px] text-slate-500">
-                              {m.quota_usage_percentage}% of monthly quota
+                              {m.quota_usage_percentage}% consumed
                             </div>
                           </div>
                         </td>
@@ -785,7 +845,7 @@ export const InternalPortal: React.FC = () => {
                             <button
                               onClick={() => handleSimulate(m)}
                               className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition"
-                              title="Simulate Ingested Order Webhook"
+                              title="Inject Real Verified Order Webhook"
                             >
                               <Zap className="w-3.5 h-3.5" />
                             </button>
@@ -802,66 +862,98 @@ export const InternalPortal: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: SUBSCRIPTIONS & REVENUE OPERATIONS */}
+      {/* TAB 2: LIVE SUBSCRIPTIONS & REVENUE OPERATIONS */}
       {/* ========================================================================= */}
-      {activeTab === 'subscriptions' && metrics && (
+      {activeTab === 'subscriptions' && subscriptionOps && (
         <div className="space-y-6 font-mono text-xs">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
               <span className="text-slate-500 text-[10px] block">FREE STARTER (₹0)</span>
-              <div className="text-xl font-bold text-white mt-1">{metrics.tier_distribution.free} Stores</div>
+              <div className="text-xl font-bold text-white mt-1">
+                {subscriptionOps.tier_breakdown?.free?.count || 0} Stores
+              </div>
               <span className="text-[10px] text-slate-400">₹0 MRR</span>
             </div>
             <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
               <span className="text-blue-400 text-[10px] block">GROWTH STARTER (₹499)</span>
-              <div className="text-xl font-bold text-white mt-1">{metrics.tier_distribution.starter} Stores</div>
-              <span className="text-[10px] text-emerald-400">₹{(metrics.tier_distribution.starter * 499).toLocaleString('en-IN')} MRR</span>
+              <div className="text-xl font-bold text-white mt-1">
+                {subscriptionOps.tier_breakdown?.starter?.count || 0} Stores
+              </div>
+              <span className="text-[10px] text-emerald-400">
+                ₹{(subscriptionOps.tier_breakdown?.starter?.mrr || 0).toLocaleString('en-IN')} MRR
+              </span>
             </div>
             <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
               <span className="text-brand-400 text-[10px] block">BUSINESS PRO (₹1,499)</span>
-              <div className="text-xl font-bold text-white mt-1">{metrics.tier_distribution.growth} Stores</div>
-              <span className="text-[10px] text-emerald-400">₹{(metrics.tier_distribution.growth * 1499).toLocaleString('en-IN')} MRR</span>
+              <div className="text-xl font-bold text-white mt-1">
+                {subscriptionOps.tier_breakdown?.growth?.count || 0} Stores
+              </div>
+              <span className="text-[10px] text-emerald-400">
+                ₹{(subscriptionOps.tier_breakdown?.growth?.mrr || 0).toLocaleString('en-IN')} MRR
+              </span>
             </div>
             <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
               <span className="text-purple-400 text-[10px] block">AGENCY SCALE (₹3,999)</span>
-              <div className="text-xl font-bold text-white mt-1">{metrics.tier_distribution.agency} Stores</div>
-              <span className="text-[10px] text-emerald-400">₹{(metrics.tier_distribution.agency * 3999).toLocaleString('en-IN')} MRR</span>
+              <div className="text-xl font-bold text-white mt-1">
+                {subscriptionOps.tier_breakdown?.agency?.count || 0} Stores
+              </div>
+              <span className="text-[10px] text-emerald-400">
+                ₹{(subscriptionOps.tier_breakdown?.agency?.mrr || 0).toLocaleString('en-IN')} MRR
+              </span>
             </div>
           </div>
 
           <div className="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-3 font-sans">
-            <h3 className="font-bold text-white font-mono text-sm flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-emerald-400" />
-              <span>Razorpay Subscription Gateway Registry</span>
-            </h3>
-            <p className="text-xs text-slate-400">
-              All merchant recurring subscriptions, payment gateway references, renewal cycles, and failure status.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="font-bold text-white font-mono text-sm flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-emerald-400" />
+                  <span>Real-Time Gateway Subscription Registry ({subscriptionOps.subscriptions?.length || 0})</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Live database records: Gateway customer IDs, subscription references, renewal cycles, and auto-renew status.
+                </p>
+              </div>
+              <div className="text-left sm:text-right font-mono text-xs text-emerald-400 font-bold shrink-0">
+                Total Live MRR: ₹{subscriptionOps.total_mrr?.toLocaleString('en-IN') || 0}
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
-              <table className="w-full text-left font-mono text-xs">
+              <table className="w-full text-left font-mono text-xs min-w-[700px]">
                 <thead>
                   <tr className="border-b border-slate-800 text-[10px] text-slate-500 uppercase">
                     <th className="py-2.5">Workspace</th>
                     <th className="py-2.5">Plan Tier</th>
+                    <th className="py-2.5">Live MRR</th>
                     <th className="py-2.5">Gateway Sub ID</th>
-                    <th className="py-2.5">Billing Status</th>
-                    <th className="py-2.5">Renewal / End</th>
-                    <th className="py-2.5 text-right">Quick Override</th>
+                    <th className="py-2.5">Status</th>
+                    <th className="py-2.5">Renewal / Expiry</th>
+                    <th className="py-2.5 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
-                  {merchants.map((m) => (
-                    <tr key={m.workspace_id} className="hover:bg-slate-800/30">
-                      <td className="py-3 font-sans font-bold text-white">{m.workspace_name}</td>
-                      <td className="py-3">{renderTierBadge(m.plan_tier)}</td>
-                      <td className="py-3 text-slate-400">{m.provider_subscription_id || 'N/A (Free)'}</td>
-                      <td className="py-3">{renderStatusBadge(m.subscription_status)}</td>
+                  {subscriptionOps.subscriptions?.map((s: any) => (
+                    <tr key={s.workspace_id} className="hover:bg-slate-800/30">
+                      <td className="py-3 font-sans font-bold text-white">
+                        {s.workspace_name}
+                        <span className="block text-[11px] font-mono text-slate-500">{s.email}</span>
+                      </td>
+                      <td className="py-3">{renderTierBadge(s.plan_tier)}</td>
+                      <td className="py-3 font-bold text-emerald-400">
+                        {s.mrr_inr > 0 ? `₹${s.mrr_inr.toLocaleString('en-IN')}/mo` : '₹0'}
+                      </td>
+                      <td className="py-3 text-slate-400">{s.provider_subscription_id || 'None (Free Plan)'}</td>
+                      <td className="py-3">{renderStatusBadge(s.subscription_status)}</td>
                       <td className="py-3 text-slate-400">
-                        {m.current_period_end ? new Date(m.current_period_end).toLocaleDateString() : 'Continuous'}
+                        {s.current_period_end ? new Date(s.current_period_end).toLocaleDateString() : 'Active Ongoing'}
                       </td>
                       <td className="py-3 text-right">
                         <button
-                          onClick={() => openOverrideDialog(m)}
+                          onClick={() => {
+                            const found = merchants.find((m) => m.workspace_id === s.workspace_id);
+                            if (found) openOverrideDialog(found);
+                          }}
                           className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 text-[11px]"
                         >
                           Modify Plan
@@ -877,67 +969,80 @@ export const InternalPortal: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: STOREFRONTS & WEBHOOKS INVENTORY */}
+      {/* TAB 3: REAL-TIME STOREFRONTS & WEBHOOKS INVENTORY */}
       {/* ========================================================================= */}
       {activeTab === 'integrations' && (
         <div className="space-y-4 font-mono text-xs">
           <div className="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-3 font-sans">
-            <h3 className="font-bold text-white font-mono text-sm flex items-center gap-2">
-              <Activity className="w-4 h-4 text-sky-400" />
-              <span>Connected Storefronts & Ingestion Inventory</span>
-            </h3>
-            <p className="text-xs text-slate-400">
-              Live audit of individual store URLs, public snippet verification keys, webhook reception times, and widget telemetry.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="font-bold text-white font-mono text-sm flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-sky-400" />
+                  <span>Storefronts & Ingestion Inventory ({integrationsList.length} Connected)</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Live telemetry: Verified domains, public API keys, last widget ping, and last verified webhook ingestion.
+                </p>
+              </div>
+              <span className="text-slate-400 font-mono text-xs shrink-0">
+                Verified: <strong className="text-emerald-400">{integrationsList.filter((i) => i.is_verified).length}</strong> / {integrationsList.length}
+              </span>
+            </div>
+
             <div className="overflow-x-auto">
-              <table className="w-full text-left font-mono text-xs">
+              <table className="w-full text-left font-mono text-xs min-w-[720px]">
                 <thead>
                   <tr className="border-b border-slate-800 text-[10px] text-slate-500 uppercase">
-                    <th className="py-2.5">Store Domain</th>
+                    <th className="py-2.5">Domain</th>
                     <th className="py-2.5">Merchant Workspace</th>
                     <th className="py-2.5">Verification</th>
-                    <th className="py-2.5">Last Widget Ping</th>
-                    <th className="py-2.5">Last Webhook Ingest</th>
-                    <th className="py-2.5 text-right">Simulate Ping</th>
+                    <th className="py-2.5">Last Widget Activity</th>
+                    <th className="py-2.5">Last Webhook Activity</th>
+                    <th className="py-2.5">Events Ingested</th>
+                    <th className="py-2.5 text-right">Trigger Test Order</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
-                  {merchants.flatMap((m) =>
-                    m.websites.map((w) => (
-                      <tr key={w.id} className="hover:bg-slate-800/30">
-                        <td className="py-3 text-white font-bold flex items-center gap-1.5">
-                          <Globe className="w-3.5 h-3.5 text-brand-400" />
-                          <span>{w.domain}</span>
-                        </td>
-                        <td className="py-3 text-slate-400 font-sans">{m.workspace_name}</td>
-                        <td className="py-3">
-                          {w.is_verified ? (
-                            <span className="text-emerald-400 flex items-center gap-1">
-                              <CheckCircle2 className="w-3 h-3" /> VERIFIED
-                            </span>
-                          ) : (
-                            <span className="text-amber-400 flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3" /> PENDING
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 text-slate-400">
-                          {w.last_widget_activity_at ? new Date(w.last_widget_activity_at).toLocaleTimeString() : 'Never'}
-                        </td>
-                        <td className="py-3 text-slate-400">
-                          {w.last_event_at ? new Date(w.last_event_at).toLocaleTimeString() : 'Never'}
-                        </td>
-                        <td className="py-3 text-right">
-                          <button
-                            onClick={() => handleSimulate(m)}
-                            className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 text-[10px]"
-                          >
-                            Send Test Order
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                  {integrationsList.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-800/30">
+                      <td className="py-3 text-white font-bold flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-brand-400" />
+                        <span>{item.domain}</span>
+                      </td>
+                      <td className="py-3 text-slate-300 font-sans">{item.workspace_name}</td>
+                      <td className="py-3">
+                        {item.is_verified ? (
+                          <span className="text-emerald-400 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> VERIFIED
+                          </span>
+                        ) : (
+                          <span className="text-amber-400 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" /> PENDING
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 text-slate-400">
+                        {item.last_widget_activity_at ? new Date(item.last_widget_activity_at).toLocaleTimeString() : 'Never'}
+                      </td>
+                      <td className="py-3 text-slate-400">
+                        {item.last_event_at ? new Date(item.last_event_at).toLocaleTimeString() : 'Never'}
+                      </td>
+                      <td className="py-3 text-emerald-400 font-bold">
+                        {item.total_events} events
+                      </td>
+                      <td className="py-3 text-right">
+                        <button
+                          onClick={() => {
+                            const found = merchants.find((m) => m.workspace_id === item.workspace_id);
+                            if (found) handleSimulate(found);
+                          }}
+                          className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 text-[10px]"
+                        >
+                          Send Test Order
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -946,108 +1051,137 @@ export const InternalPortal: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 4: PLATFORM TELEMETRY & SYSTEM STATUS */}
+      {/* TAB 4: LIVE PLATFORM TELEMETRY & SYSTEM HEALTH */}
       {/* ========================================================================= */}
-      {activeTab === 'telemetry' && metrics && (
+      {activeTab === 'telemetry' && telemetry && (
         <div className="space-y-4 font-mono text-xs">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-              <span className="text-slate-500 text-[10px] block">API GATEWAY STATUS</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-slate-500 text-[10px] block uppercase">PROCESS UPTIME</span>
               <div className="text-emerald-400 font-bold text-lg flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                OPERATIONAL (PORT 4000)
+                {telemetry.uptime_formatted}
               </div>
-              <p className="text-[11px] text-slate-400">Express + Helmet + Rate Limiter + CORS Enabled</p>
+              <span className="text-[10px] text-slate-400">Process ID: {telemetry.process?.pid}</span>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-              <span className="text-slate-500 text-[10px] block">HMAC SIGNATURE AUDIT</span>
-              <div className="text-white font-bold text-lg flex items-center gap-2">
-                <Lock className="w-4 h-4 text-emerald-400" />
-                TIMING-SAFE COMP
+            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-slate-500 text-[10px] block uppercase">RSS MEMORY</span>
+              <div className="text-white font-bold text-lg">
+                {telemetry.memory?.rss_mb} MB
               </div>
-              <p className="text-[11px] text-slate-400">SHA-256 Digest Verification on Shopify & Custom Webhooks</p>
+              <span className="text-[10px] text-slate-400">Heap Used: {telemetry.memory?.heap_used_mb} MB</span>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-              <span className="text-slate-500 text-[10px] block">GLOBAL INGESTION COUNTER</span>
+            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-slate-500 text-[10px] block uppercase">INGESTED ORDER EVENTS</span>
               <div className="text-amber-400 font-bold text-lg">
-                {metrics.total_verified_events} Verified Ingested
+                {telemetry.platform_counts?.events_ingested} Verified
               </div>
-              <p className="text-[11px] text-slate-400">Event deduplication & 48h freshness window active</p>
+              <span className="text-[10px] text-slate-400">Freshness window: 48h active</span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-slate-500 text-[10px] block uppercase">AUDIT LOG RECORDS</span>
+              <div className="text-purple-400 font-bold text-lg">
+                {telemetry.platform_counts?.audit_logs} Logged
+              </div>
+              <span className="text-[10px] text-slate-400">Full audit trail persisted</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-            <span className="text-slate-400 font-bold text-sm block">System Health JSON Response</span>
-            <pre className="p-3 rounded-lg bg-slate-950 text-[11px] text-emerald-400 overflow-x-auto border border-slate-800">
-{JSON.stringify({
-  service: "proofpulse-api",
-  version: "1.0.0",
-  cluster: "prod-in-mum-1",
-  uptime_seconds: 13420,
-  memory_rss_mb: 84.2,
-  active_subsystems: [
-    "auth",
-    "websites",
-    "campaigns",
-    "events_ingestion",
-    "widget_telemetry",
-    "billing_razorpay",
-    "admin_backoffice"
-  ]
-}, null, 2)}
+          <div className="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-slate-400 font-bold text-sm">
+              <span className="flex items-center gap-2">
+                <Server className="w-4 h-4 text-emerald-400" />
+                Live Node.js Telemetry Payload
+              </span>
+              <span className="text-xs text-slate-500 font-mono">Streamed from: GET /api/v1/admin/telemetry</span>
+            </div>
+            <pre className="p-4 rounded-lg bg-slate-950 text-[11px] text-emerald-400 overflow-x-auto border border-slate-800 max-h-96">
+{JSON.stringify(telemetry, null, 2)}
             </pre>
           </div>
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 5: AUDIT TRAIL */}
+      {/* TAB 5: REAL-TIME AUDIT TRAIL STREAM */}
       {/* ========================================================================= */}
       {activeTab === 'audit' && (
         <div className="space-y-4 font-mono text-xs">
-          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3 font-sans">
-            <h3 className="font-bold text-white font-mono text-sm flex items-center gap-2">
-              <Shield className="w-4 h-4 text-purple-400" />
-              <span>Back-Office Operator Security & Audit Trail</span>
-            </h3>
-            <p className="text-xs text-slate-400">
-              Tamper-evident log of administrative overrides, VIP plan grants, website credentials verification, and security events.
-            </p>
+          <div className="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-3 font-sans">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="font-bold text-white font-mono text-sm flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-purple-400" />
+                  <span>Real-Time Platform Security & Audit Stream ({auditLogs.length} Records)</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Immutable event log of administrative plan overrides, manual comps, website DNS verifications, and staff test injections.
+                </p>
+              </div>
+              <button
+                onClick={() => loadRealtimeData()}
+                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs flex items-center gap-1.5 self-start sm:self-auto shrink-0"
+              >
+                <RefreshCw className="w-3 h-3 text-purple-400" />
+                <span>REFRESH STREAM</span>
+              </button>
+            </div>
+
             <div className="overflow-x-auto">
-              <table className="w-full text-left font-mono text-xs">
+              <table className="w-full text-left font-mono text-xs min-w-[650px]">
                 <thead>
                   <tr className="border-b border-slate-800 text-[10px] text-slate-500 uppercase">
                     <th className="py-2.5">Timestamp</th>
-                    <th className="py-2.5">Action Event</th>
+                    <th className="py-2.5">Action Type</th>
                     <th className="py-2.5">Actor</th>
-                    <th className="py-2.5">Target Workspace</th>
-                    <th className="py-2.5">Audit Note</th>
+                    <th className="py-2.5">Workspace Target</th>
+                    <th className="py-2.5">Audit Metadata</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
-                  <tr className="hover:bg-slate-800/30">
-                    <td className="py-3 text-slate-400">2026-10-21 17:15:00</td>
-                    <td className="py-3 text-rose-400 font-bold">admin.update_subscription</td>
-                    <td className="py-3 text-white">internal_operator</td>
-                    <td className="py-3 text-slate-300 font-sans">Patel E-Commerce Group</td>
-                    <td className="py-3 text-slate-400">Staff customer success override (Growth Tier)</td>
-                  </tr>
-                  <tr className="hover:bg-slate-800/30">
-                    <td className="py-3 text-slate-400">2026-10-21 16:40:12</td>
-                    <td className="py-3 text-sky-400 font-bold">website.verified</td>
-                    <td className="py-3 text-white">system_verifier</td>
-                    <td className="py-3 text-slate-300 font-sans">Bombay Artisan Living Pvt Ltd</td>
-                    <td className="py-3 text-slate-400">DNS meta-tag verified for bombaycrafts.in</td>
-                  </tr>
-                  <tr className="hover:bg-slate-800/30">
-                    <td className="py-3 text-slate-400">2026-10-21 15:10:04</td>
-                    <td className="py-3 text-amber-400 font-bold">webhook.signature_verified</td>
-                    <td className="py-3 text-white">hmac_gateway</td>
-                    <td className="py-3 text-slate-300 font-sans">Delhi Streetwear Apparel</td>
-                    <td className="py-3 text-slate-400">Shopify order webhook digested successfully</td>
-                  </tr>
+                  {auditLogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-500">
+                        No audit events recorded in this session yet. Any staff plan overrides or test event injections will stream here live.
+                      </td>
+                    </tr>
+                  ) : (
+                    auditLogs.map((log: any) => {
+                      const ws = merchants.find((m) => m.workspace_id === log.workspace_id);
+                      return (
+                        <tr key={log.id} className="hover:bg-slate-800/30">
+                          <td className="py-3 text-slate-400 whitespace-nowrap">
+                            {new Date(log.created_at).toLocaleString('en-IN', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit'
+                            })}
+                          </td>
+                          <td className="py-3">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-950/80 text-purple-300 border border-purple-800/60">
+                              {log.action}
+                            </span>
+                          </td>
+                          <td className="py-3 text-white font-semibold">
+                            {log.actor_id || 'system'}
+                          </td>
+                          <td className="py-3 text-slate-300 font-sans font-bold">
+                            {ws?.workspace_name || log.workspace_id}
+                          </td>
+                          <td className="py-3 text-slate-400">
+                            <code className="text-[10px] text-slate-300 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                              {JSON.stringify(log.metadata)}
+                            </code>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1086,7 +1220,7 @@ export const InternalPortal: React.FC = () => {
               </div>
 
               {/* Status Row */}
-              <div className="grid grid-cols-3 gap-3 font-mono text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 font-mono text-xs">
                 <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
                   <div className="text-[10px] text-slate-500 uppercase">Integration</div>
                   <div className="mt-1">{renderIntegrationBadge(inspectMerchant.integration_status)}</div>
@@ -1215,17 +1349,17 @@ export const InternalPortal: React.FC = () => {
             </div>
 
             {/* Bottom Actions */}
-            <div className="p-4 border-t border-slate-800 bg-slate-950 flex items-center justify-between font-mono text-xs">
+            <div className="p-4 border-t border-slate-800 bg-slate-950 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 font-mono text-xs">
               <button
                 onClick={() => setInspectMerchant(null)}
-                className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition text-center"
               >
                 CLOSE DRAWER
               </button>
 
               <button
                 onClick={() => openOverrideDialog(inspectMerchant)}
-                className="px-4 py-2 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-500 transition shadow-lg shadow-rose-600/20 flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-500 transition shadow-lg shadow-rose-600/20 flex items-center justify-center gap-1.5"
               >
                 <CreditCard className="w-3.5 h-3.5" />
                 <span>ADJUST SUBSCRIPTION / VIP COMP</span>

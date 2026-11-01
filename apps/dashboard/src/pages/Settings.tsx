@@ -27,17 +27,17 @@ export const Settings: React.FC = () => {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-          <SettingsIcon className="w-6 h-6 text-brand-600" />
+        <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+          <SettingsIcon className="w-5 h-5 sm:w-6 sm:h-6 text-brand-600 shrink-0" />
           Workspace & Security Settings
         </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
           Tenant isolation, membership access controls, and Indian DPDP Act privacy governance.
         </p>
       </div>
 
       {/* Workspace Details */}
-      <div className="p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
+      <div className="p-4 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
         <h2 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
           <Users className="w-4 h-4 text-brand-600" />
           Active Workspace
@@ -61,7 +61,7 @@ export const Settings: React.FC = () => {
       </div>
 
       {/* User Identity */}
-      <div className="p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
+      <div className="p-4 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
         <h2 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
           <Lock className="w-4 h-4 text-brand-600" />
           Authenticated Admin Account
@@ -85,7 +85,7 @@ export const Settings: React.FC = () => {
       </div>
 
       {/* Privacy & Compliance (DPDP Act Ready) */}
-      <div className="p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
+      <div className="p-4 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
             <Shield className="w-4 h-4 text-emerald-600" />

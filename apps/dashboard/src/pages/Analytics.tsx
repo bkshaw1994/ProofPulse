@@ -63,17 +63,17 @@ export const Analytics: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-brand-600" />
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-brand-600 shrink-0" />
             Performance & Analytics
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Track real shopper engagement, click-through rates, and attributed sales lift.
           </p>
         </div>
 
         {/* Date Filter Tabs */}
-        <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold">
+        <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold self-start sm:self-auto">
           <button
             onClick={() => setTimeRange('7d')}
             className={`px-3 py-1.5 rounded-lg transition ${
@@ -98,37 +98,37 @@ export const Analytics: React.FC = () => {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-1">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Impressions</span>
-          <div className="text-2xl font-bold text-slate-900 dark:text-white">{data.total_impressions.toLocaleString()}</div>
-          <span className="text-xs text-slate-500">Served to active store visitors</span>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-1">
+          <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Total Impressions</span>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{data.total_impressions.toLocaleString()}</div>
+          <span className="text-[11px] sm:text-xs text-slate-500 truncate block">Served to active visitors</span>
         </div>
 
-        <div className="p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-1">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Card Clicks</span>
-          <div className="text-2xl font-bold text-slate-900 dark:text-white">{data.total_clicks.toLocaleString()}</div>
-          <span className="text-xs text-slate-500">Clicked through to product page</span>
+        <div className="p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-1">
+          <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Card Clicks</span>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{data.total_clicks.toLocaleString()}</div>
+          <span className="text-[11px] sm:text-xs text-slate-500 truncate block">Direct interactions</span>
         </div>
 
-        <div className="p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-1">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Click-Through Rate (CTR)</span>
-          <div className="text-2xl font-bold text-brand-600 dark:text-brand-400">{data.ctr_percentage}%</div>
-          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">3.2x industry baseline</span>
+        <div className="p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-1">
+          <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Click Rate</span>
+          <div className="text-xl sm:text-2xl font-bold text-brand-600 dark:text-brand-400">{data.ctr_percentage}%</div>
+          <span className="text-[11px] sm:text-xs text-emerald-600 dark:text-emerald-400 font-medium truncate block">3.2x baseline</span>
         </div>
 
-        <div className="p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-1">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Attributed Orders</span>
-          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{data.attributed_conversions} Sales</div>
-          <span className="text-xs text-slate-500">Directly influenced purchases</span>
+        <div className="p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-1">
+          <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Attributed Orders</span>
+          <div className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">{data.attributed_conversions} Sales</div>
+          <span className="text-[11px] sm:text-xs text-slate-500 truncate block">Influenced purchases</span>
         </div>
       </div>
 
       {/* Interactive Recharts Graph */}
-      <div className="p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+      <div className="p-4 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h2 className="font-bold text-base text-slate-900 dark:text-white">
+            <h2 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
               Impression & Engagement Velocity
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -136,7 +136,7 @@ export const Analytics: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-semibold">
+          <div className="flex items-center gap-4 text-xs font-semibold self-start sm:self-auto">
             <div className="flex items-center gap-1.5 text-brand-600 dark:text-brand-400">
               <span className="w-2.5 h-2.5 rounded-full bg-brand-600"></span> Impressions
             </div>
@@ -146,7 +146,7 @@ export const Analytics: React.FC = () => {
           </div>
         </div>
 
-        <div className="h-72 w-full pt-2">
+        <div className="h-60 sm:h-72 w-full pt-2">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data.timeline} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>

@@ -76,10 +76,10 @@ export const Websites: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Registered Websites & Stores
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Manage your connected storefronts, domain verification tokens, and install scripts.
           </p>
         </div>
@@ -90,7 +90,7 @@ export const Websites: React.FC = () => {
             setCreatedCredentials(null);
             setErrorMsg('');
           }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs shadow-md shadow-brand-500/20 transition"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs shadow-md shadow-brand-500/20 transition active:scale-95"
         >
           <Plus className="w-4 h-4" />
           <span>Add New Website</span>
@@ -149,15 +149,15 @@ export const Websites: React.FC = () => {
 
                 {/* Key Identifiers */}
                 <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                    <span>Public Identifier:</span>
-                    <span className="font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-[11px] text-slate-900 dark:text-slate-200">
+                  <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1 text-slate-600 dark:text-slate-400">
+                    <span className="shrink-0">Public Identifier:</span>
+                    <span className="font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-[11px] text-slate-900 dark:text-slate-200 truncate max-w-full">
                       {site.public_key}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                    <span>Verification Challenge:</span>
-                    <span className="font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-[11px] text-slate-900 dark:text-slate-200">
+                  <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1 text-slate-600 dark:text-slate-400">
+                    <span className="shrink-0">Verification Token:</span>
+                    <span className="font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-[11px] text-slate-900 dark:text-slate-200 truncate max-w-full">
                       {site.verification_token}
                     </span>
                   </div>

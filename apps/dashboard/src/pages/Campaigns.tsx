@@ -114,10 +114,10 @@ export const Campaigns: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Notification Campaigns
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Build and deploy verified social proof, live visitor meters, and genuine countdown alerts.
           </p>
         </div>
@@ -127,7 +127,7 @@ export const Campaigns: React.FC = () => {
             setCreateModalOpen(true);
             setErrorMsg('');
           }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs shadow-md shadow-brand-500/20 transition"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs shadow-md shadow-brand-500/20 transition active:scale-95"
         >
           <Plus className="w-4 h-4" />
           <span>New Campaign</span>

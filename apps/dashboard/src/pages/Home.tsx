@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Flame,
   X,
+  Menu,
   CreditCard
 } from 'lucide-react';
 import { CampaignPreviewModal } from '../components/CampaignPreviewModal';
@@ -25,6 +26,7 @@ import { PLAN_CONFIGS } from '@proofpulse/config';
 
 export const Home: React.FC = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeHeroCard, setActiveHeroCard] = useState<number>(0);
 
   // Auto-rotate hero preview cards
@@ -78,19 +80,29 @@ export const Home: React.FC = () => {
       {/* Modern Marketing Header */}
       <header className="relative z-40 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl sticky top-0 px-4 sm:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/25">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <span className="font-extrabold text-xl tracking-tight text-white flex items-center gap-2">
-            ProofPulse
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-950 text-brand-300 border border-brand-800">
-              TRUTH ENGINE
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-850"
+            aria-label="Toggle marketing menu"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+
+          <NavLink to="/" className="flex items-center gap-2 sm:gap-2.5">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/25 shrink-0">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+            <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white flex items-center gap-2">
+              ProofPulse
+              <span className="hidden xs:inline-block text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-950 text-brand-300 border border-brand-800">
+                TRUTH ENGINE
+              </span>
             </span>
-          </span>
+          </NavLink>
         </div>
 
         {/* Navigation Links */}
-        <nav className="hidden md:flex items-center gap-7 text-xs font-semibold text-slate-300">
+        <nav className="hidden md:flex items-center gap-6 lg:gap-7 text-xs font-semibold text-slate-300">
           <a href="#features" className="hover:text-white transition">Notification Types</a>
           <a href="#truth-engine" className="hover:text-white transition">Truth Engine</a>
           <a href="#integration" className="hover:text-white transition">Integration</a>
@@ -99,10 +111,10 @@ export const Home: React.FC = () => {
         </nav>
 
         {/* Action CTAs */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <NavLink
             to="/dashboard"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-lg shadow-brand-600/25 transition active:scale-95"
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-lg shadow-brand-600/25 transition active:scale-95"
           >
             <span>Launch Dashboard</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -110,23 +122,109 @@ export const Home: React.FC = () => {
         </div>
       </header>
 
+      {/* Mobile Drawer for Marketing Page */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-50 md:hidden bg-slate-950/80 backdrop-blur-md"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          <div
+            className="w-72 bg-slate-900 border-r border-slate-800 h-full p-5 flex flex-col justify-between shadow-2xl overflow-y-auto animate-in slide-in-from-left duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-5">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <span className="font-extrabold text-white text-base">ProofPulse</span>
+                </div>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-1.5 text-sm font-medium">
+                <a
+                  href="#features"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white"
+                >
+                  Notification Types
+                </a>
+                <a
+                  href="#truth-engine"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white"
+                >
+                  Truth Engine
+                </a>
+                <a
+                  href="#integration"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white"
+                >
+                  3-Min Integration
+                </a>
+                <a
+                  href="#pricing"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white"
+                >
+                  Transparent Pricing
+                </a>
+                <NavLink
+                  to="/dashboard/docs"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white"
+                >
+                  Documentation
+                </NavLink>
+                <NavLink
+                  to="/internal"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-rose-400 hover:bg-slate-800"
+                >
+                  Staff Ops Console ↗
+                </NavLink>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-800 space-y-2">
+              <NavLink
+                to="/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand-600 text-white font-bold text-xs"
+              >
+                <span>Launch Dashboard</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </NavLink>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* HERO SECTION */}
-      <section className="relative z-10 pt-16 pb-24 px-4 sm:px-8 max-w-7xl mx-auto text-center space-y-8">
+      <section className="relative z-10 pt-10 sm:pt-16 pb-16 sm:pb-24 px-4 sm:px-8 max-w-7xl mx-auto text-center space-y-6 sm:space-y-8">
         {/* Eyebrow Pill */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-brand-500/30 text-brand-300 text-xs font-semibold shadow-inner backdrop-blur-md">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>Zero-Fabrication Guarantee • Cryptographically Verified Provenance</span>
+        <div className="inline-flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-brand-500/30 text-brand-300 text-[11px] sm:text-xs font-semibold shadow-inner backdrop-blur-md">
+          <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
+          <span className="truncate max-w-[280px] xs:max-w-none">Zero-Fabrication Guarantee • Cryptographically Verified</span>
         </div>
 
         {/* Main Headline */}
-        <div className="max-w-4xl mx-auto space-y-4">
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.12]">
+        <div className="max-w-4xl mx-auto space-y-3 sm:space-y-4">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.12]">
             Turn Storefront Visitors Into{' '}
             <span className="bg-gradient-to-r from-brand-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">
               Confident Buyers.
             </span>
           </h1>
-          <p className="text-base sm:text-xl text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
+          <p className="text-sm sm:text-lg md:text-xl text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
             Display authentic verified customer orders, real-time presence meters, and authoritative inventory scarcity. Zero fabricated popups. Zero fake countdown timers.
           </p>
         </div>
@@ -339,51 +437,55 @@ export const Home: React.FC = () => {
         </div>
 
         <div className="rounded-2xl border border-slate-800 bg-slate-900/80 overflow-hidden shadow-2xl">
-          <div className="grid grid-cols-3 p-4 bg-slate-950 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
-            <div>Feature / Capability</div>
-            <div className="text-brand-400">ProofPulse Truth Engine</div>
-            <div className="text-slate-500">Legacy Social Proof Apps</div>
-          </div>
+          <div className="overflow-x-auto">
+            <div className="min-w-[580px]">
+              <div className="grid grid-cols-3 p-4 bg-slate-950 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                <div>Feature / Capability</div>
+                <div className="text-brand-400">ProofPulse Truth Engine</div>
+                <div className="text-slate-500">Legacy Social Proof Apps</div>
+              </div>
 
-          <div className="divide-y divide-slate-800/60 text-xs sm:text-sm">
-            <div className="grid grid-cols-3 p-4 items-center">
-              <span className="font-semibold text-slate-200">Event Authenticity</span>
-              <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 shrink-0" /> Signed Webhook Verification
-              </span>
-              <span className="text-red-400 font-medium">Random Fake Purchases Allowed</span>
-            </div>
+              <div className="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                <div className="grid grid-cols-3 p-4 items-center">
+                  <span className="font-semibold text-slate-200">Event Authenticity</span>
+                  <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" /> Signed Webhook Verification
+                  </span>
+                  <span className="text-red-400 font-medium">Random Fake Purchases Allowed</span>
+                </div>
 
-            <div className="grid grid-cols-3 p-4 items-center">
-              <span className="font-semibold text-slate-200">Countdown Timers</span>
-              <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 shrink-0" /> Server-Enforced Hard Deadline
-              </span>
-              <span className="text-red-400 font-medium">Resets Every Page Refresh</span>
-            </div>
+                <div className="grid grid-cols-3 p-4 items-center">
+                  <span className="font-semibold text-slate-200">Countdown Timers</span>
+                  <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" /> Server-Enforced Hard Deadline
+                  </span>
+                  <span className="text-red-400 font-medium">Resets Every Page Refresh</span>
+                </div>
 
-            <div className="grid grid-cols-3 p-4 items-center">
-              <span className="font-semibold text-slate-200">Live Visitor Counts</span>
-              <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 shrink-0" /> Measured 5-min Active Sessions
-              </span>
-              <span className="text-red-400 font-medium">Synthetic Multipliers (10x-50x)</span>
-            </div>
+                <div className="grid grid-cols-3 p-4 items-center">
+                  <span className="font-semibold text-slate-200">Live Visitor Counts</span>
+                  <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" /> Measured 5-min Active Sessions
+                  </span>
+                  <span className="text-red-400 font-medium">Synthetic Multipliers (10x-50x)</span>
+                </div>
 
-            <div className="grid grid-cols-3 p-4 items-center">
-              <span className="font-semibold text-slate-200">Customer Privacy (DPDP Act)</span>
-              <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 shrink-0" /> Pseudonymized & Minimised
-              </span>
-              <span className="text-red-400 font-medium">Exposes Full Names & Street Addresses</span>
-            </div>
+                <div className="grid grid-cols-3 p-4 items-center">
+                  <span className="font-semibold text-slate-200">Customer Privacy (DPDP Act)</span>
+                  <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" /> Pseudonymized & Minimised
+                  </span>
+                  <span className="text-red-400 font-medium">Exposes Full Names & Street Addresses</span>
+                </div>
 
-            <div className="grid grid-cols-3 p-4 items-center">
-              <span className="font-semibold text-slate-200">Widget Footprint</span>
-              <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 shrink-0" /> 3.09 KB (Isolated Shadow DOM)
-              </span>
-              <span className="text-slate-400 font-medium">100KB+ (Leaking CSS Styles)</span>
+                <div className="grid grid-cols-3 p-4 items-center">
+                  <span className="font-semibold text-slate-200">Widget Footprint</span>
+                  <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" /> 3.09 KB (Isolated Shadow DOM)
+                  </span>
+                  <span className="text-slate-400 font-medium">100KB+ (Leaking CSS Styles)</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -552,17 +654,19 @@ export const Home: React.FC = () => {
       </section>
 
       {/* FOOTER */}
-      <footer className="relative z-10 border-t border-slate-800/80 bg-slate-950 py-12 px-4 sm:px-8 text-xs text-slate-400">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold">
-              <Sparkles className="w-4 h-4" />
+      <footer className="relative z-10 border-t border-slate-800/80 bg-slate-950 py-10 sm:py-12 px-4 sm:px-8 text-xs text-slate-400">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col sm:flex-row items-center gap-2.5 text-center sm:text-left">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <span className="font-bold text-slate-200 text-sm">ProofPulse</span>
             </div>
-            <span className="font-bold text-slate-200 text-sm">ProofPulse</span>
-            <span className="text-slate-500 ml-2">© 2026 ProofPulse Inc. Engineered for Indian & Global SMBs.</span>
+            <span className="text-slate-500 sm:ml-2">© 2026 ProofPulse Inc. Engineered for Indian & Global SMBs.</span>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-4 sm:gap-6">
             <NavLink to="/dashboard" className="hover:text-slate-200">Merchant Dashboard</NavLink>
             <NavLink to="/dashboard/docs" className="hover:text-slate-200">Integration Docs</NavLink>
             <a href="http://localhost:4000/api-docs" target="_blank" rel="noreferrer" className="hover:text-slate-200">

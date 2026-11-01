@@ -125,10 +125,10 @@ await axios.post('http://localhost:4000/api/v1/events', {
           <BookOpen className="w-3.5 h-3.5" />
           <span>Developer & Merchant Documentation</span>
         </div>
-        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
           Integration & API Reference
         </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
           Step-by-step instructions for embedding the ProofPulse widget on Shopify, WooCommerce, or custom storefronts, and connecting cryptographically verified order webhooks.
         </p>
       </div>
@@ -180,12 +180,12 @@ await axios.post('http://localhost:4000/api/v1/events', {
           </div>
 
           {/* Platform Switcher Buttons */}
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold overflow-x-auto">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold overflow-x-auto scrollbar-none w-full sm:w-auto">
             {(['shopify', 'woo', 'nextjs', 'curl', 'nodejs'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-3 py-1.5 rounded-lg transition capitalize ${
+                className={`px-3 py-1.5 rounded-lg transition capitalize shrink-0 ${
                   activeTab === tab
                     ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -199,11 +199,11 @@ await axios.post('http://localhost:4000/api/v1/events', {
 
         {/* Current Snippet Box */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
             <span className="font-bold text-slate-800 dark:text-slate-200">
               {snippets[activeTab].title}
             </span>
-            <span className="text-slate-400">{snippets[activeTab].desc}</span>
+            <span className="text-slate-400 text-[11px] sm:text-xs">{snippets[activeTab].desc}</span>
           </div>
 
           <div className="relative rounded-xl bg-slate-950 text-slate-200 p-4 font-mono text-xs overflow-x-auto border border-slate-800 shadow-inner">

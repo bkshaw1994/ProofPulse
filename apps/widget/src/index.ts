@@ -254,6 +254,11 @@ import {
         left: 12px;
         right: 12px;
       }
+      .pos-top_left, .pos-top_right {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+      }
     }
   `;
   shadow.appendChild(style);
